@@ -1,10 +1,12 @@
 import random
+from copy import deepcopy
 
 
 HEIGHT = 10
 WIDTH = 10
 NUMSTATES = 5
 
+KEEPDATA = [["+"] * WIDTH] + [["+"] + [" "]*(WIDTH -2) + ["+"] for row in range(HEIGHT-2)] + [["+"] * WIDTH] 
 
 
 class Program(object):
@@ -71,15 +73,19 @@ class Program(object):
         self.rules[changeKey] = t
     
     def crossover(self,other):
+        """Returns new program with some fraction of rules in each state from each parent. Both parents must have a full rulebook of keys"""
         crossoverstate = random.randint(0,3)
         statebreakindex = int(round(NUMSTATES * crossoverstate / 3))
         #This approach is strange
         newset = dict()
         for key in self.rules:
-            if key[0] <= crossoverstate:
+            if key[0] <= statebreakindex:
                 newset[key] = self.rules[key]
             else:
                 newset[key] = other.rules[key]
+        newprog = Program()
+        newprog.rules = newset
+        return newprog
 
 
 
@@ -91,6 +97,33 @@ class Program(object):
         """Less-than operator -- works randomly, but works!"""
         return random.choice([True, False])
     
+    def working(self):
+        """
+        This method will set the current program (self) to a working
+        room-clearing program. This is super-useful to make sure that
+        methods such as step, run, and evaluateFitness are working!
+        """
+        POSSIBLE_SURROUNDINGS = ["NExx", "NxWx", "Nxxx", "xExS",
+         "xExx", "xxWS", "xxWx", "xxxS", "xxxx"]
+        POSSIBLE_MOVES = ['N', 'E', 'W', 'S']
+        POSSIBLE_STATES = [0, 1, 2, 3, 4]
+        for st in POSSIBLE_STATES:
+            for surr in POSSIBLE_SURROUNDINGS:
+                if st == 0 and ('N' not in surr):   val = ('N', 0)
+                elif st == 0 and ('W' in surr):     val = ('E', 2)
+                elif st == 0:                       val = ('W', 1)
+                elif st == 1 and ('S' not in surr): val = ('S', 1)
+                elif st == 1 and ('W' in surr):     val = ('E', 2)
+                elif st == 1:                       val = ('W', 0)
+                elif st == 2 and ('E' not in surr): val = ('E', 2)
+                elif st == 2 and ('N' in surr):     val = ('S', 1)
+                elif st == 2:                       val = ('N', 0)
+                else:
+                    stepdir = surr[0]
+                    while stepdir in surr:
+                        stepdir = random.choice(POSSIBLE_MOVES)
+                    val = (stepdir, st)  # keep the same state
+                self.rules[(st, surr)] = val
 
     
 
@@ -189,4 +222,110 @@ class World: #are the walls built in??
                 elif self.room[row][col] == " ":
                     freecells += 1
         return visited / (visited + freecells)
+
+
+    def setRoom(self, data):
+        assert len(data) == len(self.room)
+        assert len(data[0]) == len(self.room[0])
+        # assert data[self.row][self.col] != "+"
+        if data[self.row][self.col] == "+":
+            trow = random.randint(0, HEIGHT -1)
+            tcol = random.randint(0, WIDTH -1)
+            while data[trow][tcol] == "+":
+                trow = random.randint(0, HEIGHT -1)
+                tcol = random.randint(0, WIDTH -1)
+            self.col = tcol
+            self.row = trow
+        self.room = deepcopy(data) #Deepcopy is what keeps everything from breaking
+        self.room[self.row][self.col] = "P"
                 
+
+
+def genPopulation(size):
+    """Returns list of randomized picobot Programs of size size."""
+    t = []
+    for i in range(size):
+        t += [Program()]
+        t[i].randomize()
+    return t
+
+
+def evaluateFitness(program, trials, steps):
+    amountcovered = []
+    for i in range(trials):
+        scol = random.randint(0,WIDTH-1) 
+        srow = random.randint(0,HEIGHT-1)
+        tworld = World(srow, scol, program)
+        tworld.setRoom(KEEPDATA)  #Important!!
+        tworld.run(steps)
+        amountcovered += [tworld.fractionVisitedCells()]
+    return sum(amountcovered)/len(amountcovered)
+
+USESTEPS = 1000
+USETRIALS = 42
+FRACTOKEEP = .1
+MUTATEPROB = .1
+
+def averager(nlist):
+    """Return average fitness from list of fitnesses"""
+    h = 0
+    for i in range(len(nlist)):
+        h += nlist[i][0]
+    return h/len(nlist)
+
+def expandTopPopulation(slist):
+    toptoKeep = []
+    for entry in range(round(len(slist) *FRACTOKEEP)):
+        toptoKeep += slist[entry]
+    newpop = toptoKeep # note the keeping of the parent population
+
+    while len(newpop) < len(toptoKeep):
+        first = toptoKeep[random.randint(0,len(toptoKeep)-1)] 
+        second = toptoKeep[random.randint(0,len(toptoKeep)-1)]
+        toAdd = first.crossover(second)
+        if random.random() < MUTATEPROB: # note only children mutate, is that bad?
+            toAdd.mutate()
+        newpop += [toAdd]
+    return newpop
+
+    
+
+
+    
+
+
+def GA(popsize, numgens):
+    print("Fitness is measured using " + USETRIALS + " random trials and running for "+ USESTEPS + " steps per trial:")
+    cprogs = genPopulation(popsize)
+    for i in range(numgens):
+        print()
+        print("Generation " + i)
+        fitnesses = []
+        for p in cprogs:
+            fitnesses += [(evaluateFitness(p, USETRIALS, USESTEPS), p)]
+        SLfit = sorted(fitnesses, reverse=True)
+        print("Average fitness:  " + str(averager(SLfit)))
+        print("Best fitness:  " + str(SLfit[0][0]))
+        cprogs =  expandTopPopulation(SLfit)
+    
+    print("Best Picobot program:")
+    print(SLfit[0][1])
+
+
+        
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
