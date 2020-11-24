@@ -2,8 +2,8 @@ import random
 from copy import deepcopy
 
 
-HEIGHT = 10
-WIDTH = 10
+HEIGHT = 25
+WIDTH = 25
 NUMSTATES = 5
 
 KEEPDATA = [["+"] * WIDTH] + [["+"] + [" "]*(WIDTH -2) + ["+"] for row in range(HEIGHT-2)] + [["+"] * WIDTH] 
@@ -193,6 +193,9 @@ class World: #are the walls built in??
     def step (self): #optional later marker code here also 
         """Use current state and surrounding data to move the simlutaion forward one unit"""
         self.room[self.row][self.col] = "o"
+        if type(self.prog) != Program:
+            print("j")
+            print(self.prog)
         nextpos = self.prog.getMove(self.state, self.getCurrentSurroundings())
         self.state = nextpos[1]
         if nextpos[0] == "N":
@@ -264,7 +267,7 @@ def evaluateFitness(program, trials, steps):
 USESTEPS = 1000
 USETRIALS = 42
 FRACTOKEEP = .1
-MUTATEPROB = .1
+MUTATEPROB = .5
 
 def averager(nlist):
     """Return average fitness from list of fitnesses"""
@@ -276,10 +279,10 @@ def averager(nlist):
 def expandTopPopulation(slist):
     toptoKeep = []
     for entry in range(round(len(slist) *FRACTOKEEP)):
-        toptoKeep += slist[entry]
+        toptoKeep += [slist[entry][1]]
     newpop = toptoKeep # note the keeping of the parent population
 
-    while len(newpop) < len(toptoKeep):
+    while len(newpop) < len(slist):
         first = toptoKeep[random.randint(0,len(toptoKeep)-1)] 
         second = toptoKeep[random.randint(0,len(toptoKeep)-1)]
         toAdd = first.crossover(second)
@@ -295,11 +298,12 @@ def expandTopPopulation(slist):
 
 
 def GA(popsize, numgens):
-    print("Fitness is measured using " + USETRIALS + " random trials and running for "+ USESTEPS + " steps per trial:")
+    print("Fitness is measured using " + str(USETRIALS) + " random trials and running for "+ str(USESTEPS) + " steps per trial:")
     cprogs = genPopulation(popsize)
+    assert (FRACTOKEEP * popsize ) >= 1
     for i in range(numgens):
         print()
-        print("Generation " + i)
+        print("Generation " + str(i))
         fitnesses = []
         for p in cprogs:
             fitnesses += [(evaluateFitness(p, USETRIALS, USESTEPS), p)]
