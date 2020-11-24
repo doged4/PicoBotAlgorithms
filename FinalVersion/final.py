@@ -328,22 +328,3 @@ def GA(popsize, numgens):
     
     print("Best Picobot program:")
     print(SLfit[0][1])
-
-
-        
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
