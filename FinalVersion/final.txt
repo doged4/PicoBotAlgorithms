@@ -1,5 +1,7 @@
 # I chose my function parameters by slightly working off of the CS5 websites tarting values. For a while, the generations seemed to get significantly better than worse again afterward, so I increased the size of the population and increased the fraction that was reused, which seemeed to prevent it from getting worse over time. To save time, I reduced the number of tested steps. It seemed that it was going well, but getting stuck around 50%, so I increased mutation rate. Increased number of trials per as it seemed that empirically the outputs I tested were not well represented when tested out at the end.
 
+# To keep things simple, I arranged it such that each population contains FRACTOKEEP (here, .2) fraction of previous population, which remain the same. The children make up the rest, and each program is a crossedover output of the best FRACTOKEEP of previous group. These new prgrams are all mutated once if a random number exceeds MUTATEPROB. This means that if a population has some programs that do very well, they will remain fully unchanged if no new program exceeds them. This is not necessarily a good strategy for all problems, but it makes reading the best output programs of each generation easier to debug.
+
 
 
 
