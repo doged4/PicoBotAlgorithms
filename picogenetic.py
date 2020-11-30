@@ -4,7 +4,7 @@ from copy import deepcopy
 
 HEIGHT = 25
 WIDTH = 25
-NUMSTATES = 5
+NUMSTATES = 3
 
 KEEPDATA = [["+"] * WIDTH] + [["+"] + [" "]*(WIDTH -2) + ["+"] for row in range(HEIGHT-2)] + [["+"] * WIDTH] 
 
@@ -323,7 +323,7 @@ def GA(popsize, numgens):
         SLfit = sorted(fitnesses, reverse=True)
         print("Average fitness:  " + str(averager(SLfit)))
         print("Best fitness:  " + str(SLfit[0][0]))
-        saveToFile("generation" + str(i) + ".txt", SLfit[0][1], "Best fitness:  " + str(SLfit[0][0]))
+        saveToFile("generation" + str(i) + ".txt", SLfit[0][1], "# Best fitness:  " + str(SLfit[0][0]))
         cprogs =  expandTopPopulation(SLfit)
     
     print("Best Picobot program:")
